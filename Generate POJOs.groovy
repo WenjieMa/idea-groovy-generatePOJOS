@@ -2,7 +2,7 @@ import com.intellij.database.model.DasTable
 import com.intellij.database.util.Case
 import com.intellij.database.util.DasUtil
 
-packageName = "com.sample;"
+
 typeMapping = [
         (~/(?i)int|number\([1-9]\)/)                      : "int",
   (~/(?i)number\(1[0-8]\)/)                      : "long",
@@ -25,10 +25,8 @@ def generate(table, dir) {
 
 def generate(tableName, out, className, fields) {
   out.println "package $packageName"
-  out.println "import javax.persistence.Column;\n" +
-          "import javax.persistence.Entity;\n" +
-          "import javax.persistence.Id;\n" +
-          "import javax.persistence.Table;\n" +
+  out.println "import javax.persistence.*;\n" +
+          "import java.util.Date;\n" +
           "import java.math.BigDecimal;"
   out.println "@Entity"
   out.println "@Table(name = \"$tableName\")"
@@ -36,7 +34,7 @@ def generate(tableName, out, className, fields) {
   out.println ""
   fields.each() {
     if (it.annos != "") out.println "  ${it.annos}"
-    out.println "  private ${it.type} ${it.name}; //${it.comment}"
+    out.println "  private ${it.type} ${it.name}; //${it.comment} "
   }
   out.println ""
   fields.each() {
@@ -70,7 +68,7 @@ def calcFields(table) {
                  oriName : col.getName(),
                  type : typeStr,
                  comment: col.getComment(),
-                 lentgh: col.getDataType().getLength(),
+                 lentgh: typeStr.equals("Date")?7:col.getDataType().getLength(),
                  annos: ""]]
   }
 }
