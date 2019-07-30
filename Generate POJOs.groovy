@@ -2,13 +2,6 @@ import com.intellij.database.model.DasTable
 import com.intellij.database.util.Case
 import com.intellij.database.util.DasUtil
 
-/*
- * Available context bindings:
- *   SELECTION   Iterable<DasObject>
- *   PROJECT     project
- *   FILES       files helper
- */
-
 packageName = "com.sample;"
 typeMapping = [
         (~/(?i)int|number\([1-9]\)/)                      : "int",
@@ -27,13 +20,18 @@ FILES.chooseDirectoryAndSave("Choose directory", "Choose where to store generate
 def generate(table, dir) {
   def className = javaName(table.getName(), true)
   def fields = calcFields(table)
-  new File(dir, className + ".java").withPrintWriter("UTF-8") { out -> generate(out, className, fields) }
+  new File(dir, className + ".java").withPrintWriter("UTF-8") { out -> generate(table.getName(), out, className, fields) }
 }
 
-def generate(out, className, fields) {
+def generate(tableName, out, className, fields) {
   out.println "package $packageName"
-  out.println ""
-  out.println ""
+  out.println "import javax.persistence.Column;\n" +
+          "import javax.persistence.Entity;\n" +
+          "import javax.persistence.Id;\n" +
+          "import javax.persistence.Table;\n" +
+          "import java.math.BigDecimal;"
+  out.println "@Entity"
+  out.println "@Table(name = \"$tableName\")"
   out.println "public class $className {"
   out.println ""
   fields.each() {
@@ -42,7 +40,15 @@ def generate(out, className, fields) {
   }
   out.println ""
   fields.each() {
-    out.println "  @Column(name= \"${it.oriName}\",length= \"${it.lentgh}\")"
+    if("id".equals(it.name)){
+      out.println "  @Id "
+    }
+
+    if("Date".equals(it.type)){
+      out.println "  @Temporal(value =TemporalType.TIMESTAMP) "
+    }
+    out.println "  @Column(name= \"${it.oriName}\",length= ${it.lentgh})"
+
     out.println "  public ${it.type} get${it.name.capitalize()}() {"
     out.println "    return ${it.name};"
     out.println "  }"
