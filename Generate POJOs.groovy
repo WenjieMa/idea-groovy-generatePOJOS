@@ -4,13 +4,12 @@ import com.intellij.database.util.DasUtil
 
 
 typeMapping = [
-        (~/(?i)int|number\([1-9]\)/)                      : "int",
-  (~/(?i)number\(1[0-8]\)/)                      : "long",
-  (~/(?i)float|double|decimal|real|number\(\d+\,\d+\)/): "double",
+        (~/(?i)int|number\([1-9]\)/)                      : "Integer",
+  (~/(?i)number\(1[0-8]\)/)                      : "Long",
+  (~/(?i)float|double|decimal|real|number\(\d+\,\d+\)/): "Double",
   (~/(?i)number\([2-9]\d\)|number\(19\)/): "BigDecimal",
   (~/(?i)datetime|timestamp/)       : "Timestamp",
   (~/(?i)date/)                     : "Date",
-  (~/(?i)time/)                     : "Time",
   (~/(?i)/)                         : "String"
 ]
 FILES.chooseDirectoryAndSave("Choose directory", "Choose where to store generated files") { dir ->
@@ -24,13 +23,14 @@ def generate(table, dir) {
 }
 
 def generate(tableName, out, className, fields) {
-  out.println "package $packageName"
+
   out.println "import javax.persistence.*;\n" +
+          "import java.io.Serializable;\n" +
           "import java.util.Date;\n" +
           "import java.math.BigDecimal;"
   out.println "@Entity"
   out.println "@Table(name = \"$tableName\")"
-  out.println "public class $className {"
+  out.println "public class $className implements Serializable {"
   out.println ""
   fields.each() {
     if (it.annos != "") out.println "  ${it.annos}"
@@ -67,7 +67,7 @@ def calcFields(table) {
                  name : javaName(col.getName(), false),
                  oriName : col.getName(),
                  type : typeStr,
-                 comment: col.getComment(),
+                 comment: col.getComment()==null?"":col.getComment(),
                  lentgh: typeStr.equals("Date")?7:col.getDataType().getLength(),
                  annos: ""]]
   }
