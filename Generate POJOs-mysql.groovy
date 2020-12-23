@@ -5,12 +5,11 @@ import com.intellij.database.util.DasUtil
 
 typeMapping = [
         (~/(?i)int|decimal\([1-9]\)/)                      : "Integer",
-  (~/(?i)decimal\(1[0-8]\)/)                      : "Long",
-  (~/(?i)float|double|real|decimal\(\d+\,\d+\)/): "Double",
-  (~/(?i)decimal\([2-9]\d\)|decimal\(19\)/): "BigDecimal",
-  (~/(?i)datetime|timestamp/)       : "Timestamp",
-  (~/(?i)date/)                     : "Date",
-  (~/(?i)/)                         : "String"
+        (~/(?i)decimal\(1[0-8]\)/)                      : "Long",
+        (~/(?i)float|double|real|decimal\(\d+\,\d+\)/): "Double",
+        (~/(?i)decimal\([2-9]\d\)|decimal\(19\)/): "BigDecimal",
+        (~/(?i)datetime|timestamp|date/)       : "Date",
+        (~/(?i)/)                         : "String"
 ]
 FILES.chooseDirectoryAndSave("Choose directory", "Choose where to store generated files") { dir ->
   SELECTION.filter { it instanceof DasTable }.each { generate(it, dir) }
@@ -43,7 +42,7 @@ def generate(tableName, out, className, fields) {
       out.println "  @Id "
     }
 
-    if("Date".equals(it.type)){
+    if("Date".equals(it.type)||"DateTime".equals(it.type)){
       out.println "  @Temporal(value =TemporalType.TIMESTAMP) "
     }
     out.println "  @Column(name= \"${it.oriName}\",length= ${it.lentgh})"
@@ -65,19 +64,19 @@ def calcFields(table) {
     def spec = Case.LOWER.apply(col.getDataType().getSpecification())
     def typeStr = typeMapping.find { p, t -> p.matcher(spec).find() }.value
     fields += [[
-                 name : javaName(col.getName(), false),
-                 oriName : col.getName(),
-                 type : typeStr,
-                 comment: col.getComment()==null?"":col.getComment(),
-                 lentgh: typeStr.equals("Date")?7:col.getDataType().getLength(),
-                 annos: ""]]
+                       name : javaName(col.getName(), false),
+                       oriName : col.getName(),
+                       type : typeStr,
+                       comment: col.getComment()==null?"":col.getComment(),
+                       lentgh: (typeStr.equals("Date")||typeStr.equals("Datetime"))?7:col.getDataType().getLength(),
+                       annos: ""]]
   }
 }
 
 def javaName(str, capitalize) {
   def s = com.intellij.psi.codeStyle.NameUtil.splitNameIntoWords(str)
-    .collect { Case.LOWER.apply(it).capitalize() }
-    .join("")
-    .replaceAll(/[^\p{javaJavaIdentifierPart}[_]]/, "_")
+          .collect { Case.LOWER.apply(it).capitalize() }
+          .join("")
+          .replaceAll(/[^\p{javaJavaIdentifierPart}[_]]/, "_")
   capitalize || s.length() == 1? s : Case.LOWER.apply(s[0]) + s[1..-1]
 }
